@@ -28,63 +28,14 @@ void Sleep(float wait_time_ms)
 
 /* Allocate resources in request for process i, only if it 
    results in a safe state and return 1, else return 0 */
-int resource_request(int j, int *request)
+int resource_request(int i, int *request)
 {
-  printf("Process %d: Requesting resources ",j);
-  int i;
-  for(i=0;i<n;i++) {
-    printf("%d, ",request[i]);
-  }
-  
-  if (!allIsSmaller(request,s->need[j],n)) {
-      printf("Error process exceeds max claim\n");
-  }
-
-  if (allIsSmaller(request,s->available,n)) {
-    printf("taking ");
-    for(i=0;i<n;i++) {
-      s->available[i] = s->available[i] - request[i];
-      s->allocation[j][i] = s->allocation[j][i] + request[i];
-      s->need[j][i] = s->need[j][i] - request[i];
-    }
-    if (safe() == 1) {
-      printf("granted. Availability vector: ");
-      for(i=0;i<n;i++) {
-        printf("%d, ",s->available[i]);
-      }
-
-      return 1;
-    }else{
-      for(i=0;i<n;i++) {
-        s->available[i] = s->available[i] + request[i];
-        s->allocation[j][i] = s->allocation[j][i] - request[i];
-        s->need[j][i] = s->need[j][i] + request[i];
-      }
-    }
-  }
-
-  printf("not given.\n");
   return 0;
 }
 
 /* Release the resources in request for process i */
-void resource_release(int j, int *request)
+void resource_release(int i, int *request)
 {
-  int i;
-  printf("--release: ");
-  for(i=0;i<n;i++) {
-    printf("%d, ",request[i]);
-  }
-  for(i=0;i<n;i++) {
-    s->available[i] = s->available[i] + request[i];
-    s->allocation[j][i] = s->allocation[j][i] - request[i];
-    s->need[j][i] = s->need[j][i] + request[i];
-  }
-  printf("RELEASE Availability vector: ");
-  for(i=0;i<n;i++) {
-    printf("%d, ",s->available[i]);
-  }
-  printf("\n");
 }
 
 /* Generate a request vector */
@@ -97,6 +48,7 @@ void generate_request(int i, int *request)
       sum += request[j];
     }
   }
+  printf("Process %d: Requesting resources.\n",i);
 }
 
 /* Generate a release vector */
@@ -227,7 +179,7 @@ int main(int argc, char* argv[])
   printf("\n");
 
   /* If initial state is unsafe then terminate with error */
-  if (safe() == 0) {
+  if (!safe()) {
     printf("An error occurred. The state is not safe\n");
     exit(0);
   }
@@ -247,57 +199,45 @@ int main(int argc, char* argv[])
   free(tid);
 
   /* Free state memory */
-  //TODO add the malloc
 }
 
 /* Check wheter a s is safe or not */
 int safe() {
-  //1. Copy available to work and init finished
   int *work = (int *) malloc(n * sizeof(int));
   int *finished = (int *) malloc(m * sizeof(int));
-  int i;
-  int j;
   
+  //1. Copy available to work and init finished
+  int i;
   for(i = 0;i<n;i++) {
     work[i] = s->available[i];
   }
 
+  int j;
   for(j = 0;j<m;j++) {
     finished[j] = 0; 
   }
 
   //2. Find an index
-  j=0;
-  while(j<m) {
-    if ((finished[j] == 0) && (allIsSmaller(s->need[j],work,n))) {
-      //3.
-      for(i = 0;i<n;i++) {
-        work[i] = work[i] + s->allocation[j][i];
-      }
-      finished[j] = 1;
-      j = 0;
-    }else{
-      j++;
-    }
-  }
-
-  //4.
   for(j=0;j<m;j++) {
     if (finished[j] == 0) {
-      return 0;
-      break;
+      int smaller = 1;
+      for(i = 0;i<n;i++) {
+        printf("i: %d\n",i);
+        if (s->need[j][i] >= work[i]) {
+          printf("i: %d\n",i);
+          smaller = 0;
+          break;
+        }
+      }
+      if (smaller==1) {
+        printf("index: %d\n",j);
+        //swap;
+      }
     }
   }
-  return 1;
+
+  printf("end\n");
+
+  return 0;
 }
 
-/* Check if all elements of the first array is smaller than the other. */
-int allIsSmaller(int a[],int b[],int s) {
-  int i;
-  for(i=0;i<s;i++) {
-    if (a[i] > b[i]) {
-      return 0;
-    }
-  }
-  return 1; 
-}
