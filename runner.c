@@ -21,7 +21,6 @@ int main(int argc, char* argv[])
   pthread_t tid; /* the thread identifier */
 
   for(int i = 1; i <= thread_no;i++) {
-    printf("i: %d\n",i);
     struct thread_param tp[i];
     tp[i].min = 1+(i-1)*diffsize;
     tp[i].max = 1+i*diffsize; 

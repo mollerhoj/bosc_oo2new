@@ -50,22 +50,34 @@ void list_print(List *l)
 void list_add(List *l, Node *n)
 {
   //pthread_mutex_lock(&l->mutex);
-  //pthread_mutex_lock(&lock);
+  pthread_mutex_lock(&lock);
   l->len += 1;
   l->last->next = n;
   l->last = n;
   l->last->next = NULL;
-  //pthread_mutex_unlock(&lock);
+  pthread_mutex_unlock(&lock);
   //pthread_mutex_unlock(&l->mutex);
 }
 
 /* list_remove: remove and return the first (non-root) element from list l */
 Node *list_remove(List *l)
 {
+  if (l->len == 0) {return NULL;}
+
+  pthread_mutex_lock(&lock);
   Node *n;
-  l->len -=1;
+  
   n = l->first->next;
-  l->first->next = l->first->next->next;
+  
+  if (l->len == 1) {
+    l->first->next = NULL; 
+    l->last = l->first;
+  }else{
+    l->first->next = l->first->next->next;
+  }
+
+  l->len -=1;
+  pthread_mutex_unlock(&lock);
   return n;
 }
 
@@ -86,6 +98,17 @@ Node *node_new_str(char *s)
   n = (Node *) malloc(sizeof(Node));
   n->elm = (void *) malloc((strlen(s)+1) * sizeof(char));
   strcpy((char *) n->elm, s);
+  n->next = NULL;
+  return n;
+}
+
+/* node_new_int: return a new node structure, where elm points to new copy of s */
+Node *node_new_int(int i)
+{
+  Node *n;
+  n = (Node *) malloc(sizeof(Node));
+  n->elm = (void *) malloc(sizeof(int));
+  n->elm = (void *) i;
   n->next = NULL;
   return n;
 }

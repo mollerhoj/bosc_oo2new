@@ -10,58 +10,116 @@
 #include <pthread.h>
 #include "list.h"
 #include <unistd.h> 
+#include <semaphore.h>
 
 // FIFO list;
 List *fifo;
-List *fifo2;
 void *producer(void *param);
+void *consumer(void *param);
+int products_max;
+int products_created;
+int products_removed;
+
+sem_t empty;
+sem_t full;
+sem_t mutex;
+sem_t mutex2;
 
 int main(int argc, char* argv[])
 {
+  int producers = atoi(argv[1]);
+  int consumers = atoi(argv[2]);
+  int buffersize = atoi(argv[3]);
+  products_max = atoi(argv[4]);
+
   fifo = list_new();
 
-  list_add(fifo, node_new_str("s1"));
-  list_add(fifo, node_new_str("s2"));
-  list_add(fifo, node_new_str("s3"));
-
-  //Print the full list
-  list_print(fifo);
-
-  //Remove and return one element
-  Node *n1 = list_remove(fifo);
-  printf("%s\n",n1->elm);
-
-  //Print the list with one element removed
-  list_print(fifo);
-
-  //Test with 2 processes 
-  fifo2 = list_new();
+  sem_init(&empty, 0, buffersize);
+  sem_init(&full, 0, 0);
+  sem_init(&mutex, 0, 1);
 
   pthread_attr_t attr; 
   pthread_attr_init(&attr);
-  pthread_t tid;
-  pthread_t tid2;
   
-  pthread_create(&tid ,&attr,producer,(void*)"a");
-  pthread_create(&tid2,&attr,producer,(void*)"b");
-  pthread_join(tid,NULL);
-  pthread_join(tid2,NULL);
+  pthread_t tid[producers];
+  for (int i=0;i<=producers;i++) {
+    pthread_create(&tid[i],&attr,producer,(void*)i);
+  }
+ 
+  pthread_t tid2[consumers];
+  for (int i=0;i<=consumers;i++) {
+    pthread_create(&tid2[i],&attr,consumer,(void*)i);
+  }
+  
+  for (int i=0;i<=producers;i++) {
+    pthread_join(tid[i],NULL);
+  }
 
-  list_print(fifo2);
-  
+
+
+  for (int i=0;i<=consumers;i++) {
+    pthread_join(tid2[i],NULL);
+  }
+
+  list_print(fifo);
   return 0;
+}
+
+void randomSleep() {
+    struct timespec delay;
+    delay.tv_sec = 0;
+    delay.tv_nsec = 100000000L;
+    nanosleep(&delay,NULL);
+}
+
+int removeProduct() {
+    int removed = 0;
+    sem_wait(&mutex2);
+    if (products_removed < products_max) {
+      products_removed += 1;
+      removed = products_removed;
+    }
+    sem_post(&mutex2);
+    return removed;
+}
+
+int createProduct() {
+    int created = 0;
+    sem_wait(&mutex);
+    if (products_created < products_max) {
+      products_created += 1;
+      created = products_created;
+    }
+    sem_post(&mutex);
+    return created;
+}
+
+void *consumer(void *arg)
+{ 
+  while(1) {
+    if (removeProduct == 0) {break;}
+    sem_wait(&full);
+    Node *n1 = list_remove(fifo);
+    sem_post(&empty);
+    printf("Consumer %d consumed Item_%d (out of %d)\n",(int)arg,(int)n1->elm,products_max);
+    randomSleep();
+  }
+  pthread_exit(0);
 }
 
 void *producer(void *arg)
 { 
-  for(int i = 0;i < 5;i++) {
-    char str[10];
-    sprintf(str,"%s%d",(char *)arg,i);
-    list_add(fifo2, node_new_str(str));
-    struct timespec delay;
-    delay.tv_sec = 0;
-    delay.tv_nsec = 50000000L;
-    nanosleep(&delay,NULL);
+  while(1) {
+    int product = createProduct();
+    if (product == 0) {break;}
+
+    sem_wait(&empty);
+    list_add(fifo, node_new_int(product));
+    sem_post(&full);
+
+    printf("Producer %d produced Item_%d (out of %d)\n",(int)arg,product,products_max);
+
+    randomSleep();
   }
   pthread_exit(0);
 }

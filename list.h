@@ -29,4 +29,5 @@ Node *list_remove(List *l);      /* remove and return the first element from lis
 Node *node_new(void);            /* return a new node structure */
 Node *node_new_str(char *s);     /* return a new node structure, where elm points to new copy of string s */
 
+Node *node_new_int(int i);     /* return a new node structure, where elm points to new copy of string s */
 #endif
