@@ -18,8 +18,6 @@ List *list_new(void)
 {
   List *l;
 
-  pthread_mutex_init(&lock,NULL);
-  //pthread_mutex_init(&l->mutex,NULL);
 
   l = (List *) malloc(sizeof(List));
   l->len = 0;
@@ -28,6 +26,10 @@ List *list_new(void)
   l->first = l->last = (Node *) malloc(sizeof(Node));
   l->first->elm = NULL;
   l->first->next = NULL;
+  
+  // INIT AFTER
+  pthread_mutex_init(&lock,NULL);
+  //pthread_mutex_init(&l->mutex,NULL);
   return l;
 }
 

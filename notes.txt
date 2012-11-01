@@ -3,6 +3,10 @@ Opgave 1.2:
 Mit program kører ikke hurtigere med flere tråde.
 Skriv i terminal. time ./a.out 500000000 10 
 
+TODO: try now, the mutex has been inited after
+
+lav mutexes.
+
 Exercise 2.3
 
 Jeg kan ikke finde ud af at få låsen til at ligge på structen. Den ligger ude

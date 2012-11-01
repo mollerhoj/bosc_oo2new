@@ -3,6 +3,8 @@
 #include <sys/time.h>
 #include <pthread.h>
 
+pthread_mutex_t lock;
+
 typedef struct state {
   int *resource;
   int *available;
@@ -30,7 +32,8 @@ void Sleep(float wait_time_ms)
    results in a safe state and return 1, else return 0 */
 int resource_request(int j, int *request)
 {
-  printf("Process %d: Requesting resources ",j);
+  pthread_mutex_lock(&lock);
+  //printf("Process %d: Requesting resources ",j);
   int i;
   for(i=0;i<n;i++) {
     printf("%d, ",request[i]);
@@ -41,18 +44,20 @@ int resource_request(int j, int *request)
   }
 
   if (allIsSmaller(request,s->available,n)) {
-    printf("taking ");
+    //printf("taking ");
     for(i=0;i<n;i++) {
       s->available[i] = s->available[i] - request[i];
       s->allocation[j][i] = s->allocation[j][i] + request[i];
       s->need[j][i] = s->need[j][i] - request[i];
     }
     if (safe() == 1) {
-      printf("granted. Availability vector: ");
+      //printf("granted. Availability vector: ");
       for(i=0;i<n;i++) {
-        printf("%d, ",s->available[i]);
+        //printf("%d, ",s->available[i]);
       }
+      //printf("\n");
 
+      pthread_mutex_unlock(&lock);
       return 1;
     }else{
       for(i=0;i<n;i++) {
@@ -63,28 +68,31 @@ int resource_request(int j, int *request)
     }
   }
 
-  printf("not given.\n");
+  //printf("not given.\n");
+  pthread_mutex_unlock(&lock);
   return 0;
 }
 
 /* Release the resources in request for process i */
 void resource_release(int j, int *request)
 {
+  pthread_mutex_lock(&lock);
   int i;
-  printf("--release: ");
+  //printf("--release: ");
   for(i=0;i<n;i++) {
-    printf("%d, ",request[i]);
+    //printf("%d, ",request[i]);
   }
   for(i=0;i<n;i++) {
     s->available[i] = s->available[i] + request[i];
     s->allocation[j][i] = s->allocation[j][i] - request[i];
     s->need[j][i] = s->need[j][i] + request[i];
   }
-  printf("RELEASE Availability vector: ");
+  //printf("RELEASE Availability vector: ");
   for(i=0;i<n;i++) {
-    printf("%d, ",s->available[i]);
+    //printf("%d, ",s->available[i]);
   }
-  printf("\n");
+  //printf("\n");
+  pthread_mutex_unlock(&lock);
 }
 
 /* Generate a request vector */
@@ -109,7 +117,6 @@ void generate_release(int i, int *request)
       sum += request[j];
     }
   }
-  printf("Process %d: Releasing resources.\n",i);
 }
 
 /* Threads starts here */
@@ -124,14 +131,14 @@ void *process_thread(void *param)
     generate_request(i, request);
     while (!resource_request(i, request)) {
       /* Wait */
-      Sleep(100);
+      Sleep(10);
     }
     /* Generate release */
     generate_release(i, request);
     /* Release resources */
     resource_release(i, request);
     /* Wait */
-    Sleep(1000);
+    Sleep(100);
   }
   free(request);
 }
@@ -154,7 +161,7 @@ int **allocate_double_matrix(int m, int n)
   return mat;
 }
 
-void free_double_matrix(double **mat)
+void free_double_matrix(int **mat)
 {
   /* Free elements */
   free(*mat);
@@ -164,6 +171,9 @@ void free_double_matrix(double **mat)
 
 int main(int argc, char* argv[])
 {
+  //Init lock
+  pthread_mutex_init(&lock,NULL);
+
   /* Get size of current state as input */
   int i, j;
   printf("Number of processes: ");
@@ -246,8 +256,14 @@ int main(int argc, char* argv[])
   pthread_exit(0);
   free(tid);
 
-  /* Free state memory */
-  //TODO add the malloc
+  free(s->available);
+  free(s->resource);
+  free_double_matrix(s->max);
+  free_double_matrix(s->allocation);
+  free_double_matrix(s->need);
+  free(s);
+
+  printf("done");
 }
 
 /* Check wheter a s is safe or not */

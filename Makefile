@@ -7,13 +7,10 @@ LIBS= -lpthread
 CC = clang 
 DEBUGFLAGS = -g3 -gdwarf-2
 
-#banker: ${OBJS3}
-#	${CC} -o $@ ${DEBUGFLAGS} ${LIBS} ${OBJS3}
+banker: ${OBJS3}
+	${CC} -o $@ ${DEBUGFLAGS} ${LIBS} ${OBJS3}
 
-#procon: ${OBJS2}
-#	${CC} -o $@ ${DEBUGFLAGS} ${LIBS} ${OBJS2}
-
-fifo: main.o ${OBJS}
+fifo: ${OBJS}
 	${CC} -o $@ ${DEBUGFLAGS} ${LIBS} ${OBJS}
 
 clean:

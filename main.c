@@ -38,6 +38,8 @@ int main(int argc, char* argv[])
   sem_init(&full, 0, 0);
   sem_init(&mutex, 0, 1);
 
+  sem_wait(&full) ///TESTING
+
   pthread_attr_t attr; 
   pthread_attr_init(&attr);
   
@@ -54,8 +56,6 @@ int main(int argc, char* argv[])
   for (int i=0;i<=producers;i++) {
     pthread_join(tid[i],NULL);
   }
-
-
 
   for (int i=0;i<=consumers;i++) {
     pthread_join(tid2[i],NULL);

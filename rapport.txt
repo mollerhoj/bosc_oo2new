@@ -1,5 +1,7 @@
 I'm adding a print list function to test my functions
 
+I added a node_new_int to add interger to the list
+
 I can't figure out how to make a mutex in a struct, gives strange error.
 
 How to test good?
